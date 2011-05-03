@@ -15,13 +15,11 @@ $tbl_web_user_attributes = $modx->getFullTableName('web_user_attributes');
 if(isset($_POST['email']))
 {
 	$_POST['email'] = trim($_POST['email']);
-	$username = $modx->db->escape($_POST['email']);
+	$username              = $modx->db->escape($_POST['email']);
+//	$modx->sendRedirect($modx->makeUrl($modx->documentIdentifier), 0, 'REDIRECT_HEADER', 'HTTP/1.1 301 Moved Permanently');
 	$web_users = $modx->db->select('id', $tbl_web_users, "username='{$username}'");
 	
-	if($modx->db->getRecordCount($web_users) > 0)
-	{
-		$output = 'すでに登録されています。';
-	}
+	if($modx->db->getRecordCount($web_users) > 0) $output = 'すでに登録されています。';
 	else
 	{
 		$a_key_string          = uniqid();
@@ -108,16 +106,23 @@ function send_actmail($email,$a_key_string,$message)
 	global $modx;
 	$message = str_replace('[+act_key+]', $a_key_string, $message);
 	$message = str_replace('{act_key}',   $a_key_string, $message);
-	include_once MODX_BASE_PATH . 'manager/includes/controls/modxmailer.inc.php';
-	$mail = new MODxMailer();
-	$mail->IsMail();
-	$mail->IsHTML(0);
-	$mail->From     = $modx->config['emailsender'];
-	$mail->FromName = $modx->config['site_name'];
-	$mail->Subject  =  '利用者登録メール';
-	$mail->Body     = $message;
-	$mail->AddAddress($email);
-	if(!$mail->Send()) {echo '送信できません';};
+	$from_name = mb_encode_mimeheader(mb_convert_encoding($modx->config['site_name'], 'JIS', $modx->config['modx_charset']));
+	$from     = $modx->config['emailsender'];
+	$subject  = '登録メール';
+	$headers  = "MIME-Version: 1.0\n";
+	$headers .= 'Content-type: text/plain; charset="iso-2022-jp"' . "\n";
+	$headers .= "Content-Transfer-Encoding: 7bit\n";
+	$headers .= "From: {$from_name}<{$from}>\n";
+	$headers .= "Reply-To: {$from}\n";
+	$headers .= 'Date: ' . date('r') . "\n";
+	
+	mb_language('ja');
+	mb_internal_encoding($modx->config['modx_charset']);
+	$subject = mb_encode_mimeheader($subject,"iso-2022-jp","B");
+	$message = mb_convert_encoding($message, "iso-2022-jp",$modx->config['modx_charset']);
+	$mail = mail($email, $subject, $message, $headers);
+	if(!$mail) {return '送信エラー';}
+	return $mail;  
 }
 
 function default_tpl()
