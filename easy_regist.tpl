@@ -106,23 +106,16 @@ function send_actmail($email,$a_key_string,$message)
 	global $modx;
 	$message = str_replace('[+act_key+]', $a_key_string, $message);
 	$message = str_replace('{act_key}',   $a_key_string, $message);
-	$from_name = mb_encode_mimeheader(mb_convert_encoding($modx->config['site_name'], 'JIS', $modx->config['modx_charset']));
-	$from     = $modx->config['emailsender'];
-	$subject  = '登録メール';
-	$headers  = "MIME-Version: 1.0\n";
-	$headers .= 'Content-type: text/plain; charset="iso-2022-jp"' . "\n";
-	$headers .= "Content-Transfer-Encoding: 7bit\n";
-	$headers .= "From: {$from_name}<{$from}>\n";
-	$headers .= "Reply-To: {$from}\n";
-	$headers .= 'Date: ' . date('r') . "\n";
-	
-	mb_language('ja');
+	mb_language('Japanese');
 	mb_internal_encoding($modx->config['modx_charset']);
-	$subject = mb_encode_mimeheader($subject,"iso-2022-jp","B");
-	$message = mb_convert_encoding($message, "iso-2022-jp",$modx->config['modx_charset']);
-	$mail = mail($email, $subject, $message, $headers);
-	if(!$mail) {return '送信エラー';}
-	return $mail;  
+	$from_name = mb_encode_mimeheader($modx->config['site_name']);
+	$from      = $modx->config['emailsender'];
+	$subject   = '登録メール';
+	$header[] = 'Content-type: text/plain; charset="iso-2022-jp"';
+	$header[] = "From: {$from_name}<{$from}>";
+	$header[] = 'Date: ' . date('r');
+	$headers = join("\n", $header);
+	mb_send_mail($email, $subject, $message, $headers);
 }
 
 function default_tpl()
